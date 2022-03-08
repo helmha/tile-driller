@@ -87,13 +87,7 @@ int png_load(char *name, int *dx, int *dy, int *bpp, unsigned char **o) {
     png_set_packing(png_ptr);
     depth = 8;
   }
-  /*
-    if (info_ptr->valid & PNG_INFO_tRNS) {
-      png_set_expand(png_ptr);
-      colortype = PNG_COLOR_TYPE_RGBA;
-      depth = 8;
-    }
-    */
+
   if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
     png_set_expand(png_ptr);
     colortype = PNG_COLOR_TYPE_RGBA;
