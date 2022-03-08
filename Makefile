@@ -2,7 +2,7 @@
 CC=gcc
 LD=gcc
 
-CFLAGS = -Wall -c -g -O3 -ansi -pedantic `pkg-config --cflags gtk+-2.0`
+CFLAGS = -Wall -c -g -O3 -ansi -pedantic `pkg-config --cflags gtk+-2.0` -fcommon
 LDFLAGS = `pkg-config --libs gtk+-2.0` -lz -lpng -ljpeg
 
 CFILES = main.c memory.c png.c editor.c common.c palette.c tiled.c jpg.c bmp.c string.c pcx.c prefs.c exit.c tga.c

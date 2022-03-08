@@ -1,22 +1,21 @@
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
-#include <gtk/gtk.h>
 #include <gdk/gdk.h>
+#include <gdk/gdkkeysyms.h>
+#include <gtk/gtk.h>
 #include <gtk/gtkadjustment.h>
 #include <gtk/gtkwidget.h>
-#include <gdk/gdkkeysyms.h>
 
 #include <png.h>
+#include <zlib.h>
 
 #include "defines.h"
 #include "editor.h"
 #include "png.h"
-
-
 
 int png_load(char *name, int *dx, int *dy, int *bpp, unsigned char **o) {
 
@@ -28,7 +27,6 @@ int png_load(char *name, int *dx, int *dy, int *bpp, unsigned char **o) {
   unsigned char *t;
   FILE *f;
 
-
   if (name == NULL)
     return FAILED;
 
@@ -38,7 +36,8 @@ int png_load(char *name, int *dx, int *dy, int *bpp, unsigned char **o) {
     return FAILED;
   }
 
-  png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, (png_voidp)NULL, NULL, NULL);
+  png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, (png_voidp)NULL, NULL,
+                                   NULL);
   if (png_ptr == NULL) {
     fclose(f);
     return FAILED;
@@ -66,7 +65,8 @@ int png_load(char *name, int *dx, int *dy, int *bpp, unsigned char **o) {
 
   png_init_io(png_ptr, f);
   png_read_info(png_ptr, info_ptr);
-  png_get_IHDR(png_ptr, info_ptr, &width, &height, &depth, &colortype, NULL, NULL, NULL);
+  png_get_IHDR(png_ptr, info_ptr, &width, &height, &depth, &colortype, NULL,
+               NULL, NULL);
 
   /* palette -> RGB */
   if (colortype == PNG_COLOR_TYPE_PALETTE) {
@@ -87,8 +87,14 @@ int png_load(char *name, int *dx, int *dy, int *bpp, unsigned char **o) {
     png_set_packing(png_ptr);
     depth = 8;
   }
-
-  if (info_ptr->valid & PNG_INFO_tRNS) {
+  /*
+    if (info_ptr->valid & PNG_INFO_tRNS) {
+      png_set_expand(png_ptr);
+      colortype = PNG_COLOR_TYPE_RGBA;
+      depth = 8;
+    }
+    */
+  if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
     png_set_expand(png_ptr);
     colortype = PNG_COLOR_TYPE_RGBA;
     depth = 8;
@@ -108,7 +114,7 @@ int png_load(char *name, int *dx, int *dy, int *bpp, unsigned char **o) {
   else
     *bpp = 4;
 
-  t = malloc(width*height*(*bpp));
+  t = malloc(width * height * (*bpp));
   if (t == NULL) {
     fprintf(stderr, "PNG_LOAD: Out of memory error.\n");
     fclose(f);
@@ -116,7 +122,7 @@ int png_load(char *name, int *dx, int *dy, int *bpp, unsigned char **o) {
   }
 
   /* allocate row pointers and fill them in */
-  row_pointers = malloc(height*sizeof(png_bytep));
+  row_pointers = malloc(height * sizeof(png_bytep));
   if (row_pointers == NULL) {
     fprintf(stderr, "PNG_LOAD: Out of memory error.\n");
     fclose(f);
@@ -125,7 +131,7 @@ int png_load(char *name, int *dx, int *dy, int *bpp, unsigned char **o) {
   }
 
   for (i = 0; i < height; i++)
-    row_pointers[i] = t + i*width*(*bpp);
+    row_pointers[i] = t + i * width * (*bpp);
 
   /* read the image */
   png_read_image(png_ptr, row_pointers);
@@ -143,7 +149,6 @@ int png_load(char *name, int *dx, int *dy, int *bpp, unsigned char **o) {
   return SUCCEEDED;
 }
 
-
 int png_save(char *name, int dx, int dy, unsigned char *o) {
 
   png_structp png_ptr;
@@ -151,7 +156,6 @@ int png_save(char *name, int dx, int dy, unsigned char *o) {
   png_bytep *row_pointers;
   int i;
   FILE *f;
-
 
   if (name == NULL || dx <= 0 || dy <= 0)
     return FAILED;
@@ -162,7 +166,8 @@ int png_save(char *name, int dx, int dy, unsigned char *o) {
     return FAILED;
   }
 
-  png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, (png_voidp)NULL, NULL, NULL);
+  png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, (png_voidp)NULL,
+                                    NULL, NULL);
   if (png_ptr == NULL) {
     fclose(f);
     return FAILED;
@@ -187,15 +192,16 @@ int png_save(char *name, int dx, int dy, unsigned char *o) {
   png_set_compression_window_bits(png_ptr, 15);
   png_set_compression_method(png_ptr, 8);
 
-  png_set_IHDR(png_ptr, info_ptr, dx, dy, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
-               PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+  png_set_IHDR(png_ptr, info_ptr, dx, dy, 8, PNG_COLOR_TYPE_RGB_ALPHA,
+               PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
+               PNG_FILTER_TYPE_DEFAULT);
 
   png_write_info(png_ptr, info_ptr);
 
   /* allocate row pointers and fill them in */
   row_pointers = malloc(dy * sizeof(png_bytep));
   for (i = 0; i < dy; i++)
-    row_pointers[i] = (png_bytep)o + i*dx*4*sizeof(unsigned char);
+    row_pointers[i] = (png_bytep)o + i * dx * 4 * sizeof(unsigned char);
 
   png_write_image(png_ptr, row_pointers);
 
